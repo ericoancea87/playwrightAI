@@ -1,0 +1,17 @@
+{
+  "name": "playwrightai",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "generate-tests": "node generate-tests.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "openai": "^6.9.1",
+    "playwright": "^1.56.1"
+  }
+}
