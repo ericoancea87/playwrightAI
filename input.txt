@@ -1,0 +1,6 @@
+URL: 
+https://www.bcr.ro/ro/persoane-fizice/
+
+ACCEPTANCE CRITERIA:
+1. Page contains hyperlink with strict inner text "Conectare"
+2. This hyperlink navigates to https://login.bcr.ro/users/login

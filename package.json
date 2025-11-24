@@ -5,7 +5,13 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "generate-tests": "node generate-tests.js"
+    "gen": "node generate-tests.js",
+    "exec": "npx playwright test",
+    "headed": "npx playwright test --headed",
+    "debug": "npx playwright test --ui",
+    "allure": "npx playwright test && npx allure generate allure-results --clean -o allure-report && npx allure open allure-report",
+    "clean": "rm -rf allure-results allure-report test-results",
+    "all": "node generate-tests.js && npx playwright test && npx allure generate allure-results --clean -o allure-report && npx allure open allure-report"
   },
   "keywords": [],
   "author": "",
@@ -13,5 +19,8 @@
   "dependencies": {
     "openai": "^6.9.1",
     "playwright": "^1.56.1"
+  },
+  "devDependencies": {
+    "allure-playwright": "^3.4.2"
   }
 }

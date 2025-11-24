@@ -3,18 +3,16 @@ import path from "path";
 import OpenAI from "openai";
 import { chromium } from "playwright";
 
-
-
-const client = new OpenAI({apiKey: process.env.OPENAI_API_KEY});
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 //parse input file
 function parseInputFile() {
-    const inputPath = "./input.txt"
-    const raw = fs.readFileSync(inputPath, "utf-8");
-    const urlMatch = raw.match(/URL:\s*(.*?)\r?\n/i) || raw.match(/URL:\s*(.*)/i);
-    const url = urlMatch ? urlMatch[1].trim() : "";
-    const criteriaMatch = raw.match(/ACCEPTANCE CRITERIA:\s*([\s\S]+)/i);
-    const criteria = criteriaMatch ? criteriaMatch[1].trim() : raw.trim();
+  const inputPath = "./input.txt";
+  const raw = fs.readFileSync(inputPath, "utf-8");
+  const urlMatch = raw.match(/URL:\s*(.*?)\r?\n/i) || raw.match(/URL:\s*(.*)/i);
+  const url = urlMatch ? urlMatch[1].trim() : "";
+  const criteriaMatch = raw.match(/ACCEPTANCE CRITERIA:\s*([\s\S]+)/i);
+  const criteria = criteriaMatch ? criteriaMatch[1].trim() : raw.trim();
 
   if (!url || !criteria) {
     throw new Error(
@@ -35,19 +33,14 @@ async function extractPageMetadata(url) {
 
   const info = await page.evaluate(() => {
     const cleanText = (str) =>
-      (str || "")
-        .replace(/\s+/g, " ")
-        .trim()
-        .slice(0, 200);
+      (str || "").replace(/\s+/g, " ").trim().slice(0, 200);
 
     const inputs = Array.from(
       document.querySelectorAll("input, textarea, select")
     ).map((el) => {
       const labelElem = (el.labels && el.labels[0]) || null;
       const label =
-        labelElem?.innerText?.trim() ||
-        el.getAttribute("aria-label") ||
-        "";
+        labelElem?.innerText?.trim() || el.getAttribute("aria-label") || "";
 
       return {
         tag: el.tagName.toLowerCase(),
@@ -81,12 +74,12 @@ async function extractPageMetadata(url) {
         href: el.getAttribute("href") || "",
       }));
 
-    const headings = Array.from(
-      document.querySelectorAll("h1, h2, h3")
-    ).map((el) => ({
-      level: el.tagName.toLowerCase(),
-      text: cleanText(el.innerText),
-    }));
+    const headings = Array.from(document.querySelectorAll("h1, h2, h3")).map(
+      (el) => ({
+        level: el.tagName.toLowerCase(),
+        text: cleanText(el.innerText),
+      })
+    );
 
     return { inputs, buttons, links, headings };
   });
@@ -110,6 +103,8 @@ async function generatePlaywrightTests(url, criteria, pageMetadata) {
     Generate a JavaScript Playwright test file (.spec.js) that tests the page.
 
     Requirements:
+    - Import { test, expect } from "@playwright/test".
+    - Import { allure } from "allure-playwright".
     - Use Playwright Test (@playwright/test) with "test" and "expect".
     - Create one "test()" per acceptance criterion, with a clear test name.
     - Use resilient selectors based on this JSON: getByRole, getByLabel, getByPlaceholder, getByText, etc.
@@ -117,12 +112,15 @@ async function generatePlaywrightTests(url, criteria, pageMetadata) {
     - Add helpful comments explaining each logical step.
     - If any selector is uncertain or not present in the JSON, add a clear TODO comment so a human can fix it.
     - Do NOT include any explanations or markdown, only the JavaScript code of the test file.
+    - For each test:
+        - Add "allure.label('feature', '<short feature name>')".
+        - Add "allure.severity('critical')" (or another reasonable severity).
+        - always try to dismiss any cookie banner or consent overlay by checking for buttons with text like "Accept toate"
 `.trim();
-
+  //- Use "await test.step('<step name>', async () => { ... })" for key phases (navigate, act, assert).
   const response = await client.responses.create({
-    model: "gpt-4o-mini", 
-    instructions:
-      "You are generating Playwright tests.",
+    model: "gpt-4o-mini",
+    instructions: "You are generating Playwright tests.",
     input,
   });
 
@@ -131,7 +129,7 @@ async function generatePlaywrightTests(url, criteria, pageMetadata) {
     throw new Error("No code returned from the model.");
   }
 
- code = code.trim();
+  code = code.trim();
 
   if (code.startsWith("```")) {
     let firstNewline = code.indexOf("\n");
@@ -152,18 +150,34 @@ async function main() {
 
   console.log("Parsed from input:");
   console.log(" URL: ", url);
-  console.log(" Criteria:\n", criteria.split("\n").map((l) => "  " + l).join("\n"));
+  console.log(
+    " Criteria:\n",
+    criteria
+      .split("\n")
+      .map((l) => "  " + l)
+      .join("\n")
+  );
 
-  console.log("\n Crawling page with Playwright to collect element metadata...");
+  console.log(
+    "\n Crawling page with Playwright to collect element metadata..."
+  );
   const metadata = await extractPageMetadata(url);
 
-  console.log("Metadata collected. Inputs:", metadata.inputs.length,
-              "Buttons:", metadata.buttons.length);
+  console.log(
+    "Metadata collected. Inputs:",
+    metadata.inputs.length,
+    "Buttons:",
+    metadata.buttons.length
+  );
 
   console.log("\n Calling OpenAI to generate Playwright tests...");
-  const testFileContent = await generatePlaywrightTests(url, criteria, metadata);
+  const testFileContent = await generatePlaywrightTests(
+    url,
+    criteria,
+    metadata
+  );
 
-  const outPath = "./generated.spec.ts";
+  const outPath = "./generated-tests/generated-" + Date.now() + ".spec.js";
   fs.writeFileSync(outPath, testFileContent, "utf-8");
 
   console.log(`\n Playwright tests generated and saved to ${outPath}`);
