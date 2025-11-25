@@ -1,0 +1,30 @@
+version: '3.9'
+
+services:
+  tests:
+    container_name: playwright-allure-tests
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app
+
+    env_file:
+      - .env
+
+    environment:
+      - NODE_ENV=ci
+
+    volumes:
+      - .:/app
+      - allure_results:/app/allure-results
+      - allure_report:/app/allure-report
+
+    ports:
+      - "8080:8080"
+
+    command: >
+      sh -c "npm run all"
+
+volumes:
+  allure_results:
+  allure_report:

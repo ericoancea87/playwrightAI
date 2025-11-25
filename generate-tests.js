@@ -117,7 +117,7 @@ async function generatePlaywrightTests(url, criteria, pageMetadata) {
         - Add "allure.severity('critical')" (or another reasonable severity).
         - always try to dismiss any cookie banner or consent overlay by checking for buttons with text like "Accept toate"
 `.trim();
-  //- Use "await test.step('<step name>', async () => { ... })" for key phases (navigate, act, assert).
+
   const response = await client.responses.create({
     model: "gpt-4o-mini",
     instructions: "You are generating Playwright tests.",

@@ -9,9 +9,9 @@
     "exec": "npx playwright test",
     "headed": "npx playwright test --headed",
     "debug": "npx playwright test --ui",
-    "allure": "npx playwright test && npx allure generate allure-results --clean -o allure-report && npx allure open allure-report",
+    "allure": "npx allure generate allure-results --clean -o allure-report && npx allure open allure-report",
     "clean": "rm -rf allure-results allure-report test-results",
-    "all": "node generate-tests.js && npx playwright test && npx allure generate allure-results --clean -o allure-report && npx allure open allure-report"
+    "all": "npm run gen && npm run exec && npm run allure"
   },
   "keywords": [],
   "author": "",
